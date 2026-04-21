@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>日本都市クイズ 🚃</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#42A8E8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="都市クイズ">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+/* ===== BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','BIZ UDPGothic','Meiryo',sans-serif;
+  background:linear-gradient(170deg,#B8DFF5 0%,#D0EEFA 28%,#E8F6FD 55%,#FFF8F0 100%);
+  background-attachment:fixed;
+  color:#1A2E4A;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* 雲の装飾 */
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background-image:
+    radial-gradient(ellipse 130px 55px at 8% 10%,rgba(255,255,255,0.82) 0%,transparent 70%),
+    radial-gradient(ellipse 85px 38px at 62% 5%,rgba(255,255,255,0.72) 0%,transparent 70%),
+    radial-gradient(ellipse 55px 25px at 90% 16%,rgba(255,255,255,0.6) 0%,transparent 70%),
+    radial-gradient(ellipse 105px 45px at 38% 24%,rgba(255,255,255,0.55) 0%,transparent 70%),
+    radial-gradient(ellipse 70px 30px at 75% 30%,rgba(255,255,255,0.45) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* 路線ライン（底部） */
+body::after{
+  content:'';
+  position:fixed;bottom:0;left:0;right:0;height:5px;z-index:0;
+  background:repeating-linear-gradient(90deg,#FF8C42 0,#FF8C42 10px,#FFF8F0 10px,#FFF8F0 22px);
+  opacity:0.45;pointer-events:none;
+}
+
+.screen{display:none;min-height:100vh;position:relative;z-index:1;padding-bottom:28px;}
+.screen.active{display:block;}
+
+/* ===== HEADER ===== */
+.hdr{
+  background:#FFF;
+  border-bottom:4px solid #FF8C42;
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 3px 16px rgba(255,140,66,0.14);
+}
+.hdr-title{
+  font-size:1.1rem;font-weight:900;
+  color:#E05A00;
+  letter-spacing:0.02em;
+}
+.btn-back{
+  background:#FFF3E8;border:2px solid #FF8C42;color:#E05A00;
+  padding:5px 14px;border-radius:20px;font-size:0.8rem;font-weight:700;cursor:pointer;
+  transition:background 0.15s;
+}
+.btn-back:active{background:#FFD9B0;}
+
+/* ===== HOME HERO ===== */
+.home-hero{
+  margin:14px 14px 4px;
+  background:linear-gradient(135deg,#42A8E8 0%,#2E8BC9 45%,#1E72AA 100%);
+  border-radius:22px;
+  padding:20px 18px 18px;
+  text-align:center;
+  box-shadow:0 8px 28px rgba(46,139,201,0.32);
+  position:relative;
+  overflow:hidden;
+}
+/* 内部の装飾ライン */
+.home-hero::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;height:5px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,0.5) 0,rgba(255,255,255,0.5) 8px,transparent 8px,transparent 18px);
+}
+.home-hero h1{
+  font-size:1.85rem;font-weight:900;
+  color:#FFF;
+  text-shadow:1px 2px 4px rgba(0,0,0,0.18);
+  line-height:1.25;
+}
+.home-hero .sub{
+  font-size:0.85rem;color:rgba(255,255,255,0.88);
+  margin-top:7px;font-weight:600;letter-spacing:0.02em;
+}
+.train-anim{
+  font-size:2.3rem;padding:4px 0 8px;
+  animation:train 2.5s ease-in-out infinite;display:block;
+}
+@keyframes train{0%,100%{transform:translateX(-10px);}50%{transform:translateX(10px);}}
+
+/* ===== SECTION TITLE ===== */
+.sec-title{
+  padding:14px 16px 7px;
+  font-size:0.92rem;font-weight:700;color:#1A2E4A;
+  display:flex;align-items:center;
+}
+.sec-title::after{
+  content:'';flex:1;height:2px;margin-left:10px;
+  background:linear-gradient(90deg,#FF8C42 0%,rgba(255,140,66,0.1) 100%);
+  border-radius:1px;
+}
+
+/* ===== GENRE CARDS ===== */
+.genre-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 12px;}
+.genre-card{
+  background:#FFF;
+  border-radius:18px;
+  padding:18px 10px 14px;
+  text-align:center;cursor:pointer;
+  transition:transform 0.15s,box-shadow 0.15s;
+  position:relative;overflow:hidden;
+  box-shadow:0 4px 14px rgba(26,46,74,0.1),0 1px 3px rgba(26,46,74,0.06);
+}
+.genre-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:var(--gc,#FF8C42);
+}
+.genre-card:active{transform:scale(0.95);box-shadow:0 1px 6px rgba(26,46,74,0.08);}
+.genre-card .gi{font-size:2rem;margin-bottom:8px;display:block;}
+.genre-card .gn{font-size:0.75rem;font-weight:700;color:#1A2E4A;line-height:1.35;}
+.genre-card .gpbar{margin-top:9px;height:6px;background:#E8EFF5;border-radius:3px;overflow:hidden;}
+.genre-card .gpfill{height:100%;background:var(--gc,#FF8C42);border-radius:3px;transition:width 0.6s ease;}
+.genre-card .gpt{font-size:0.65rem;color:#7A99B8;margin-top:4px;font-weight:600;}
+
+/* ===== ACTION CARDS (復習・コレクション) ===== */
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 14px;}
+.action-card{
+  border-radius:18px;padding:16px 12px;text-align:center;cursor:pointer;
+  transition:transform 0.15s,box-shadow 0.15s;
+  box-shadow:0 4px 14px rgba(26,46,74,0.1);
+}
+.action-card:active{transform:scale(0.95);}
+/* 復習BOX カード */
+.action-card:first-child{
+  background:linear-gradient(135deg,#FFF5F5 0%,#FFE8E8 100%);
+  border:2px solid #FFB3B3;
+}
+/* コレクション カード */
+.action-card:last-child{
+  background:linear-gradient(135deg,#F0F8FF 0%,#D8EEFA 100%);
+  border:2px solid #A8D8F5;
+}
+.action-card .ai{font-size:1.8rem;}
+.action-card .an{font-size:0.78rem;font-weight:700;color:#1A2E4A;margin-top:6px;}
+.rbadge{
+  display:inline-block;background:#FF5252;color:#FFF;
+  font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:4px;
+}
+.crate{font-size:0.68rem;color:#2E7BB5;font-weight:600;margin-top:4px;}
+
+/* ===== QUIZ HEADER ===== */
+.quiz-hdr{
+  background:#FFF;
+  border-bottom:4px solid #FF8C42;
+  padding:10px 16px;
+  box-shadow:0 3px 12px rgba(255,140,66,0.1);
+}
+.quiz-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.quiz-gname{font-size:0.82rem;font-weight:700;color:#1A2E4A;}
+.quiz-cnt{font-size:0.82rem;color:#5B7FA6;font-weight:600;}
+.quiz-pbar{height:8px;background:#E0ECF5;border-radius:4px;overflow:hidden;}
+.quiz-pfill{
+  height:100%;
+  background:linear-gradient(90deg,#5BB8F5,#FF8C42);
+  border-radius:4px;transition:width 0.4s ease;
+}
+.quiz-score-line{font-size:0.78rem;color:#5B7FA6;font-weight:600;margin-top:5px;}
+
+/* ===== QUESTION CARD ===== */
+.q-card{
+  margin:14px;
+  background:#FFF;
+  border-radius:20px;
+  padding:22px 18px;
+  min-height:115px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 22px rgba(26,46,74,0.1),0 2px 6px rgba(26,46,74,0.06);
+  border-top:5px solid #5BB8F5;
+}
+.q-text{
+  font-size:1.05rem;font-weight:700;
+  text-align:center;line-height:1.75;
+  white-space:pre-wrap;color:#1A2E4A;
+}
+
+/* ===== CHOICE BUTTONS ===== */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 14px;}
+.cbtn{
+  background:#FFF;
+  border:2px solid #C8DCE8;
+  border-radius:14px;
+  padding:14px 10px;
+  color:#1A2E4A;font-size:0.88rem;font-weight:700;
+  cursor:pointer;text-align:center;line-height:1.35;
+  transition:transform 0.12s,border-color 0.12s,background 0.12s;
+  box-shadow:0 3px 10px rgba(26,46,74,0.08);
+}
+.cbtn:active{transform:scale(0.96);border-color:#5BB8F5;background:#EBF6FD;}
+.cbtn.correct{
+  background:linear-gradient(135deg,#E6F7E6,#CCF0CC);
+  border-color:#43A047;color:#1B5E20;
+  animation:cpulse 0.45s ease;
+  box-shadow:0 3px 12px rgba(67,160,71,0.25);
+}
+.cbtn.wrong{
+  background:linear-gradient(135deg,#FFF0F0,#FFD9D9);
+  border-color:#EF5350;color:#7F0000;
+}
+@keyframes cpulse{
+  0%{transform:scale(1);}40%{transform:scale(1.05);}100%{transform:scale(1);}
+}
+.clabel{color:#FF8C42;font-size:0.7rem;display:block;margin-bottom:3px;font-weight:800;}
+
+/* ===== EXPLANATION ===== */
+.exp-card{
+  margin:10px 14px;padding:13px 15px 13px 18px;
+  border-radius:14px;font-size:0.82rem;line-height:1.65;
+  display:none;font-weight:600;
+}
+.exp-card.correct{
+  background:#E6F7E6;
+  border-left:5px solid #43A047;
+  color:#1B5E20;
+}
+.exp-card.wrong{
+  background:#FFF0F0;
+  border-left:5px solid #EF5350;
+  color:#7F0000;
+}
+
+/* ===== NEXT BUTTON ===== */
+.next-btn{
+  display:none;
+  margin:10px 14px;padding:16px;
+  background:linear-gradient(135deg,#FF9A4A,#FF6B1A);
+  border:none;border-radius:14px;
+  color:#FFF;font-size:0.95rem;font-weight:900;
+  cursor:pointer;text-align:center;
+  width:calc(100% - 28px);
+  box-shadow:0 5px 16px rgba(255,107,26,0.38);
+  letter-spacing:0.03em;
+}
+.next-btn:active{opacity:0.88;transform:translateY(1px);}
+
+/* ===== RESULT ===== */
+.res-wrap{padding:22px 16px;text-align:center;}
+.res-icon{font-size:4.8rem;margin:14px 0;}
+.res-score{
+  font-size:2.6rem;font-weight:900;
+  color:#E05A00;
+  text-shadow:2px 2px 0 rgba(255,140,66,0.25);
+  margin:8px 0;
+}
+.res-msg{font-size:0.95rem;color:#3A6090;font-weight:600;margin-bottom:18px;}
+.stars{display:flex;justify-content:center;gap:8px;font-size:1.9rem;margin:8px 0;}
+.res-info{
+  border-radius:13px;padding:12px 15px;margin:8px 0;
+  font-size:0.82rem;font-weight:600;text-align:left;
+}
+.res-info.ok{background:#E6F7E6;border-left:5px solid #43A047;color:#1B5E20;}
+.res-info.ng{background:#FFF0F0;border-left:5px solid #EF5350;color:#7F0000;}
+.res-btns{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+.btn-p{
+  padding:16px;
+  background:linear-gradient(135deg,#FF9A4A,#FF6B1A);
+  border:none;border-radius:14px;
+  color:#FFF;font-size:0.95rem;font-weight:900;cursor:pointer;
+  box-shadow:0 5px 16px rgba(255,107,26,0.32);
+  letter-spacing:0.02em;
+}
+.btn-s{
+  padding:14px;background:#FFF;
+  border:2px solid #FF8C42;border-radius:14px;
+  color:#E05A00;font-size:0.88rem;font-weight:700;cursor:pointer;
+  box-shadow:0 2px 8px rgba(26,46,74,0.07);
+}
+.btn-p:active{opacity:0.86;transform:translateY(1px);}
+.btn-s:active{background:#FFF3E8;}
+
+/* ===== REVIEW ===== */
+.rev-empty{text-align:center;padding:60px 20px;}
+.rev-empty .ri{font-size:3.8rem;}
+.rev-empty p{
+  color:#3A6090;margin-top:14px;font-size:0.95rem;
+  line-height:1.7;font-weight:600;
+}
+.rev-start{
+  display:block;margin:14px;padding:16px;
+  background:linear-gradient(135deg,#FF6B6B,#FF3D3D);
+  border:none;border-radius:14px;
+  color:#FFF;font-size:0.95rem;font-weight:900;
+  cursor:pointer;text-align:center;
+  box-shadow:0 5px 16px rgba(255,61,61,0.32);
+  letter-spacing:0.02em;
+}
+.rev-list{padding:0 14px 14px;}
+.rev-item{
+  background:#FFF;
+  border-radius:14px;padding:12px 14px 12px 18px;margin-bottom:8px;
+  border-left:5px solid #FF6B6B;
+  box-shadow:0 3px 10px rgba(26,46,74,0.07);
+}
+.rev-genre{font-size:0.68rem;color:#E05050;font-weight:700;margin-bottom:3px;}
+.rev-q{font-size:0.85rem;font-weight:700;color:#1A2E4A;}
+
+/* ===== COLLECTION ===== */
+.col-hero{
+  margin:14px 14px 8px;
+  background:linear-gradient(135deg,#42A8E8 0%,#2E8BC9 50%,#1E72AA 100%);
+  border-radius:20px;padding:18px 16px;text-align:center;
+  box-shadow:0 6px 22px rgba(46,139,201,0.28);
+  color:#FFF;
+}
+.col-total{font-size:1.4rem;font-weight:900;color:#FFF;}
+.col-pbar-wrap{
+  margin:10px auto 0;width:82%;height:12px;
+  background:rgba(255,255,255,0.28);border-radius:6px;overflow:hidden;
+}
+.col-pbar-fill{
+  height:100%;
+  background:linear-gradient(90deg,#FFE066,#FF9A4A);
+  border-radius:6px;transition:width 0.9s ease;
+}
+.col-sub{font-size:0.82rem;color:rgba(255,255,255,0.85);margin-top:5px;font-weight:600;}
+
+.col-genre{margin:0 14px 22px;}
+.col-genre-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:2px solid #E0ECF5;margin-bottom:10px;
+}
+.col-gname{font-size:0.9rem;font-weight:700;color:#1A2E4A;}
+.col-grate{font-size:0.8rem;color:#5B7FA6;font-weight:600;}
+.stamp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+.stamp{
+  aspect-ratio:1;border-radius:13px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:4px;
+  border:2px solid #E0ECF5;
+  background:#F2F7FA;
+  color:#B0C4D4;
+  transition:all 0.3s ease;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(26,46,74,0.06);
+}
+.stamp.got{
+  background:linear-gradient(135deg,#FFFBE6,#FFF0C2);
+  border-color:#FFD540;
+  color:#805A00;
+  box-shadow:0 3px 10px rgba(255,213,64,0.4);
+}
+.stamp.got::after{
+  content:'✓';
+  position:absolute;top:2px;right:4px;
+  font-size:0.55rem;color:#FF8C42;font-weight:900;
+}
+.stamp-em{font-size:1.15rem;}
+.stamp-nm{font-size:0.5rem;margin-top:2px;line-height:1.2;text-align:center;word-break:break-all;}
+
+/* ===== ACHIEVEMENT BANNER ===== */
+.ach-banner{
+  position:fixed;top:0;left:0;right:0;
+  background:linear-gradient(135deg,#FFD540,#FF9A4A);
+  color:#1A2E4A;
+  padding:18px 20px;text-align:center;
+  font-size:1rem;font-weight:900;
+  z-index:9999;
+  transform:translateY(-100%);
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 5px 24px rgba(255,140,66,0.45);
+  letter-spacing:0.02em;
+}
+.ach-banner.show{transform:translateY(0);}
+
+/* home-stamp-total の色上書き */
+#home-stamp-total{color:rgba(255,255,255,0.92)!important;font-weight:700!important;}
+
+/* ===== RESPONSIVE ===== */
+@media(min-width:480px){.genre-grid{grid-template-columns:repeat(3,1fr);}}
+@media(min-width:600px){
+  body{max-width:480px;margin:0 auto;box-shadow:0 0 50px rgba(26,46,74,0.18);}
+  .ach-banner{max-width:480px;left:50%;transform:translateX(-50%) translateY(-100%);}
+  .ach-banner.show{transform:translateX(-50%) translateY(0);}
+}
+</style>
+</head>
+<body>
+
+<div id="ach" class="ach-banner"></div>
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="hdr">
+    <div class="hdr-title">🚃 日本都市クイズ</div>
+    <div id="home-stamp-total" style="font-size:0.75rem;color:#88AAFF;"></div>
+  </div>
+  <div class="home-hero">
+    <div class="train-anim">🚃💨</div>
+    <h1>全国制覇の旅へ！</h1>
+    <div class="sub">5ジャンル・計50問に挑戦しよう</div>
+  </div>
+  <div class="sec-title">📋 ジャンルを選ぼう</div>
+  <div class="genre-grid" id="genre-grid"></div>
+  <div class="action-row">
+    <div class="action-card" onclick="goReview()">
+      <div class="ai">📚</div>
+      <div class="an">復習BOX</div>
+      <div class="rbadge" id="rbadge">0問</div>
+    </div>
+    <div class="action-card" onclick="goCollection()">
+      <div class="ai">🗺️</div>
+      <div class="an">コレクション</div>
+      <div class="crate" id="col-rate">0/50 制覇</div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="s-quiz" class="screen">
+  <div class="quiz-hdr">
+    <div class="quiz-meta">
+      <div class="quiz-gname" id="qgname"></div>
+      <div class="quiz-cnt" id="qcnt"></div>
+    </div>
+    <div class="quiz-pbar"><div class="quiz-pfill" id="qpfill"></div></div>
+    <div class="quiz-score-line">⭐ 正解: <span id="qscore">0</span></div>
+  </div>
+  <div class="q-card"><div class="q-text" id="qtext"></div></div>
+  <div class="choices" id="choices"></div>
+  <div class="exp-card" id="expcard"></div>
+  <button class="next-btn" id="nextbtn" onclick="nextQ()">次の問題へ →</button>
+</div>
+
+<!-- RESULT -->
+<div id="s-result" class="screen">
+  <div class="hdr">
+    <div class="hdr-title">🏆 結果発表</div>
+    <button class="btn-back" onclick="goHome()">ホームへ</button>
+  </div>
+  <div class="res-wrap" id="res-wrap"></div>
+</div>
+
+<!-- REVIEW -->
+<div id="s-review" class="screen">
+  <div class="hdr">
+    <div class="hdr-title">📚 復習BOX</div>
+    <button class="btn-back" onclick="goHome()">ホームへ</button>
+  </div>
+  <div id="rev-content"></div>
+</div>
+
+<!-- COLLECTION -->
+<div id="s-col" class="screen">
+  <div class="hdr">
+    <div class="hdr-title">🗺️ コレクション</div>
+    <button class="btn-back" onclick="goHome()">ホームへ</button>
+  </div>
+  <div id="col-content"></div>
+</div>
+
+<script>
+// ===== DATA =====
+const GENRES = {
+  seireishitei:{
+    name:'政令指定都市クイズ',icon:'🏙️',color:'#4A90E2',
+    questions:[
+      {q:'政令指定都市は全国に何市ある？（2024年時点）',cs:['18市','19市','20市','21市'],a:2,exp:'2012年に熊本市が加わり現在は全国に20の政令指定都市があります。',city:'全国20政令市'},
+      {q:'日本で最も人口の多い政令指定都市は？',cs:['大阪市','横浜市','名古屋市','札幌市'],a:1,exp:'横浜市の人口は約374万人で政令指定都市・全市区町村（23区除く）で最多です。',city:'横浜市'},
+      {q:'北海道唯一の政令指定都市は？',cs:['旭川市','函館市','帯広市','札幌市'],a:3,exp:'札幌市は1972年に政令指定都市となった北海道唯一の政令市です。',city:'札幌市'},
+      {q:'最も新しく政令指定都市になったのはどこ？',cs:['岡山市','相模原市','熊本市','新潟市'],a:2,exp:'熊本市は2012年4月に政令指定都市となり、現在のところ最新の政令市です。',city:'熊本市'},
+      {q:'面積が最も大きい政令指定都市は？',cs:['浜松市','静岡市','横浜市','札幌市'],a:0,exp:'浜松市の面積は約1558㎢で政令指定都市の中で最も広い面積を誇ります。',city:'浜松市'},
+      {q:'政令指定都市の中で県庁所在地でないのはどれ？',cs:['仙台市','堺市','広島市','福岡市'],a:1,exp:'堺市は大阪府の政令市ですが、大阪府の府庁所在地は大阪市です。',city:'堺市'},
+      {q:'相模原市がある都道府県は？',cs:['東京都','神奈川県','埼玉県','千葉県'],a:1,exp:'相模原市は神奈川県北部にある政令指定都市。2010年に政令市になりました。',city:'相模原市'},
+      {q:'さいたま市が政令指定都市になったのはいつ？',cs:['2001年','2003年','2005年','2007年'],a:1,exp:'さいたま市は2003年4月に政令指定都市となりました。浦和・大宮・与野の合併により誕生しました。',city:'さいたま市'},
+      {q:'新潟市が政令指定都市になったのはいつ？',cs:['2003年','2005年','2007年','2009年'],a:2,exp:'新潟市は2007年4月に政令指定都市となり、新潟県唯一の政令市です。',city:'新潟市'},
+      {q:'岡山市が政令指定都市になったのはいつ？',cs:['2007年','2008年','2009年','2010年'],a:2,exp:'岡山市は2009年4月に政令指定都市となりました。中国地方では広島市に次ぐ2例目です。',city:'岡山市'}
+    ]
+  },
+  kencho:{
+    name:'県庁所在地クイズ',icon:'🏛️',color:'#9B59B6',
+    questions:[
+      {q:'岩手県の県庁所在地はどこ？',cs:['花巻市','一関市','盛岡市','北上市'],a:2,exp:'盛岡市は岩手県の県庁所在地。冬の「盛岡冷麺」や石割桜が有名です。',city:'盛岡市'},
+      {q:'群馬県の県庁所在地はどこ？',cs:['高崎市','伊勢崎市','太田市','前橋市'],a:3,exp:'前橋市は群馬県の県庁所在地。隣の高崎市の方が人口は多く、よく間違えられます。',city:'前橋市'},
+      {q:'栃木県の県庁所在地はどこ？',cs:['日光市','足利市','栃木市','宇都宮市'],a:3,exp:'宇都宮市は栃木県の県庁所在地。餃子の街として全国的に有名です。',city:'宇都宮市'},
+      {q:'山梨県の県庁所在地はどこ？',cs:['山梨市','甲府市','富士吉田市','大月市'],a:1,exp:'甲府市は山梨県の県庁所在地。武田信玄ゆかりの城下町として栄えました。',city:'甲府市'},
+      {q:'石川県の県庁所在地はどこ？',cs:['七尾市','輪島市','白山市','金沢市'],a:3,exp:'金沢市は石川県の県庁所在地。「小京都」とも呼ばれ、兼六園が有名です。',city:'金沢市'},
+      {q:'島根県の県庁所在地はどこ？',cs:['出雲市','浜田市','益田市','松江市'],a:3,exp:'松江市は島根県の県庁所在地。宍道湖と松江城が有名な城下町です。',city:'松江市'},
+      {q:'愛媛県の県庁所在地はどこ？',cs:['今治市','新居浜市','松山市','宇和島市'],a:2,exp:'松山市は愛媛県の県庁所在地。道後温泉と松山城、坊っちゃんで有名です。',city:'松山市'},
+      {q:'高知県の県庁所在地はどこ？',cs:['南国市','四万十市','土佐市','高知市'],a:3,exp:'高知市は高知県の県庁所在地。坂本龍馬の出身地として知られています。',city:'高知市'},
+      {q:'沖縄県の県庁所在地はどこ？',cs:['沖縄市','宜野湾市','那覇市','浦添市'],a:2,exp:'那覇市は沖縄県の県庁所在地。首里城と国際通りが有名な観光都市です。',city:'那覇市'},
+      {q:'宮城県の県庁所在地はどこ？',cs:['石巻市','気仙沼市','仙台市','塩竈市'],a:2,exp:'仙台市は宮城県の県庁所在地。「杜の都」とも呼ばれ、牛タンが名物です。',city:'仙台市'}
+    ]
+  },
+  jinko:{
+    name:'人口ランキングクイズ',icon:'👥',color:'#27AE60',
+    questions:[
+      {q:'日本で人口が最も多い「市」はどこ？',cs:['大阪市','名古屋市','横浜市','川崎市'],a:2,exp:'横浜市の人口は約374万人。東京23区を除く市区町村の中で断トツの1位です。',city:'横浜市'},
+      {q:'市の人口ランキング2位はどこ？',cs:['名古屋市','大阪市','札幌市','福岡市'],a:1,exp:'大阪市の人口は約275万人で、関西最大の都市として全国2位です。',city:'大阪市'},
+      {q:'市の人口ランキング3位はどこ？',cs:['福岡市','名古屋市','神戸市','京都市'],a:1,exp:'名古屋市の人口は約232万人で、東海地方最大・全国3位の都市です。',city:'名古屋市'},
+      {q:'市の人口ランキング4位はどこ？',cs:['福岡市','京都市','川崎市','札幌市'],a:3,exp:'札幌市の人口は約196万人で北海道最大、全国4位の都市です。',city:'札幌市'},
+      {q:'市の人口ランキング5位はどこ？',cs:['神戸市','福岡市','川崎市','京都市'],a:2,exp:'川崎市の人口は約154万人。横浜市と東京に挟まれた工業・住宅都市です。',city:'川崎市'},
+      {q:'東京23区の中で最も人口が多い区は？',cs:['渋谷区','新宿区','世田谷区','杉並区'],a:2,exp:'世田谷区の人口は約93万人で東京23区の中で最多。住宅地が広がります。',city:'世田谷区'},
+      {q:'都道府県で最も人口が少ないのは？',cs:['島根県','高知県','鳥取県','秋田県'],a:2,exp:'鳥取県の人口は約54万人で、全都道府県の中で最も少ない県です。',city:'鳥取県'},
+      {q:'埼玉県で最も人口が多い市は？',cs:['川口市','川越市','さいたま市','熊谷市'],a:2,exp:'さいたま市の人口は約134万人。政令指定都市であり埼玉県の県庁所在地です。',city:'さいたま市'},
+      {q:'九州地方で最も人口が多い市は？',cs:['熊本市','北九州市','鹿児島市','福岡市'],a:3,exp:'福岡市の人口は約160万人超で九州最大。近年も人口増加が続いています。',city:'福岡市'},
+      {q:'神奈川県で2番目に人口が多い市は？',cs:['相模原市','川崎市','横須賀市','藤沢市'],a:1,exp:'川崎市は神奈川県で横浜市に次ぐ2位。人口約154万人の政令指定都市です。',city:'川崎市'}
+    ]
+  },
+  nandoku:{
+    name:'難読地名クイズ',icon:'📖',color:'#E74C3C',
+    questions:[
+      {q:'「放出」の正しい読み方は？（大阪府）',cs:['ほうりだし','はなてん','ほうしゅつ','なげだし'],a:1,exp:'放出（はなてん）は大阪市城東区の地名。JR学研都市線の駅名にもなっています。',city:'放出'},
+      {q:'「喜連瓜破」の正しい読み方は？（大阪府）',cs:['きれなしわり','よろこびつらなり','きれうりわり','きつれうりわり'],a:2,exp:'喜連瓜破（きれうりわり）は大阪市平野区の地名で大阪メトロの駅名です。',city:'喜連瓜破'},
+      {q:'「志布志」の正しい読み方は？（鹿児島県）',cs:['しぶし','しふし','しほし','しぼし'],a:0,exp:'志布志市（しぶしし）は鹿児島県の市。「志布志市志布志町志布志」という住所で有名です。',city:'志布志'},
+      {q:'「不入斗」の正しい読み方は？（神奈川県）',cs:['いりやまず','ふにゅうと','ふいりどう','いらずと'],a:0,exp:'不入斗（いりやまず）は横須賀市にある地名。難読地名として全国的に知られています。',city:'不入斗'},
+      {q:'「十三」の正しい読み方は？（大阪府）',cs:['じゅうさん','とみ','じゅうぞう','じゅうそう'],a:3,exp:'十三（じゅうそう）は大阪市淀川区の地名・駅名。阪急電鉄の主要駅があります。',city:'十三'},
+      {q:'「馬喰町」の正しい読み方は？（東京都）',cs:['ばくろちょう','まくらまち','うまぐいちょう','ばこまち'],a:0,exp:'馬喰町（ばくろちょう）は東京都中央区の地名。繊維問屋が集まる商業地として有名です。',city:'馬喰町'},
+      {q:'「栗東」の正しい読み方は？（滋賀県）',cs:['くりひがし','くりとう','りっとう','くりのひがし'],a:2,exp:'栗東（りっとう）は滋賀県の市。JRA栗東トレーニングセンターがあることで有名です。',city:'栗東'},
+      {q:'「雑司が谷」の正しい読み方は？（東京都）',cs:['ぞうしがや','ざっしがや','ざつしがたに','ぞうしたに'],a:0,exp:'雑司が谷（ぞうしがや）は東京都豊島区の地名。副都心線と都電荒川線の駅があります。',city:'雑司が谷'},
+      {q:'「海士有木」の正しい読み方は？（千葉県）',cs:['かいしゆき','あまありき','うみしゆき','かいしあるき'],a:1,exp:'海士有木（あまありき）は千葉県市原市の地名・駅名（小湊鉄道）です。',city:'海士有木'},
+      {q:'「間々田」の正しい読み方は？（栃木県）',cs:['まままた','かんかんた','ままだ','ままた'],a:2,exp:'間々田（ままだ）は栃木県小山市の地名。JR宇都宮線の駅名にもなっています。',city:'間々田'}
+    ]
+  },
+  meibutsu:{
+    name:'ご当地名物ヒントクイズ',icon:'🍜',color:'#F39C12',
+    questions:[
+      {q:'「ラーメン・雪まつり・時計台\n味噌ジンギスカン」\nどこの都市？',cs:['旭川市','函館市','釧路市','札幌市'],a:3,exp:'札幌市は北海道の道庁所在地。さっぽろ雪まつりや味噌ラーメンで世界的に有名です。',city:'札幌市'},
+      {q:'「牛タン・七夕まつり・伊達政宗\nずんだもち」\nどこの都市？',cs:['盛岡市','山形市','仙台市','福島市'],a:2,exp:'仙台市は宮城県の県庁所在地。牛タンとずんだもちが名物の「杜の都」です。',city:'仙台市'},
+      {q:'「餃子・二荒山神社\nいちご（とちおとめ）」\nどこの都市？',cs:['前橋市','宇都宮市','水戸市','高崎市'],a:1,exp:'宇都宮市は餃子の消費量が全国トップクラス。二荒山神社は市のシンボルです。',city:'宇都宮市'},
+      {q:'「ういろう・名古屋城\n味噌カツ・ひつまぶし」\nどこの都市？',cs:['豊橋市','岐阜市','名古屋市','四日市市'],a:2,exp:'名古屋市は愛知県の県庁所在地。独自の食文化「名古屋めし」で知られています。',city:'名古屋市'},
+      {q:'「たこ焼き・通天閣\n新世界・くいだおれ」\nどこの都市？',cs:['神戸市','堺市','大阪市','京都市'],a:2,exp:'大阪市は関西最大の都市。「食い倒れの街」として食文化が豊かです。',city:'大阪市'},
+      {q:'「異人館・神戸牛\n南京町・ルミナリエ」\nどこの都市？',cs:['神戸市','西宮市','尼崎市','明石市'],a:0,exp:'神戸市は兵庫県の県庁所在地。開港以来の国際都市で神戸牛が有名です。',city:'神戸市'},
+      {q:'「もみじ饅頭・原爆ドーム\n牡蠣・お好み焼き」\nどこの都市？',cs:['岡山市','福山市','広島市','尾道市'],a:2,exp:'広島市は広島県の県庁所在地。平和都市として知られ牡蠣とお好み焼きが名物です。',city:'広島市'},
+      {q:'「かつおのたたき・高知城\nよさこい・清流四万十川」\nどこの都市？',cs:['徳島市','高知市','松山市','高松市'],a:1,exp:'高知市は高知県の県庁所在地。坂本龍馬の出身地でかつおのたたきが名物です。',city:'高知市'},
+      {q:'「ちゃんぽん・出島\n眼鏡橋・グラバー園」\nどこの都市？',cs:['佐世保市','大分市','長崎市','熊本市'],a:2,exp:'長崎市は長崎県の県庁所在地。鎖国時代の開港地として独自の文化が根付いています。',city:'長崎市'},
+      {q:'「わんこそば・南部鉄器\n岩手山・中尊寺金色堂」\nどこの都市？',cs:['盛岡市','北上市','花巻市','一関市'],a:0,exp:'盛岡市は岩手県の県庁所在地。わんこそばや冷麺、南部鉄器が有名です。',city:'盛岡市'}
+    ]
+  }
+};
+
+// ===== STATE =====
+const SK = 'nihon_city_quiz_v2';
+let S = {stamps:{}, reviewBox:[], mode:'quiz', genreId:null, qs:[], qi:0, score:0, answered:false};
+
+function loadS(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SK)||'{}');
+    S.stamps = d.stamps||{};
+    S.reviewBox = d.reviewBox||[];
+    Object.keys(S.stamps).forEach(k=>{S.stamps[k]=new Set(S.stamps[k]||[]);});
+  }catch(e){}
+}
+function saveS(){
+  try{
+    const d = {stamps:{}, reviewBox:S.reviewBox};
+    Object.keys(S.stamps).forEach(k=>{d.stamps[k]=[...S.stamps[k]];});
+    localStorage.setItem(SK, JSON.stringify(d));
+  }catch(e){}
+}
+
+// ===== NAV =====
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHome(){buildHome();show('s-home');}
+function goReview(){buildReview();show('s-review');}
+function goCollection(){buildCollection();show('s-col');}
+
+// ===== HOME =====
+function buildHome(){
+  const grid = document.getElementById('genre-grid');
+  grid.innerHTML='';
+  let total=0;
+  Object.entries(GENRES).forEach(([id,g])=>{
+    const got = S.stamps[id]?S.stamps[id].size:0;
+    const tot = g.questions.length;
+    total += got;
+    const pct = Math.round(got/tot*100);
+    const el = document.createElement('div');
+    el.className='genre-card';
+    el.style.setProperty('--gc', g.color);
+    el.onclick=()=>startQuiz(id);
+    el.innerHTML=`<div class="gi">${g.icon}</div><div class="gn">${g.name}</div>
+      <div class="gpbar"><div class="gpfill" style="width:${pct}%"></div></div>
+      <div class="gpt">${got}/${tot} 制覇</div>`;
+    grid.appendChild(el);
+  });
+  const allQ = Object.values(GENRES).reduce((a,g)=>a+g.questions.length,0);
+  document.getElementById('home-stamp-total').textContent = `⭐${total}/${allQ}`;
+  document.getElementById('rbadge').textContent = S.reviewBox.length+'問';
+  document.getElementById('col-rate').textContent = `${total}/${allQ} 制覇`;
+}
+
+// ===== QUIZ =====
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function startQuiz(id){
+  S.mode='quiz'; S.genreId=id;
+  S.qs=shuffle(GENRES[id].questions);
+  S.qi=0; S.score=0; S.answered=false;
+  document.getElementById('qgname').textContent = GENRES[id].icon+' '+GENRES[id].name;
+  show('s-quiz');
+  renderQ();
+}
+
+function startReviewQuiz(){
+  if(!S.reviewBox.length) return;
+  S.mode='review'; S.genreId='review';
+  S.qs=shuffle(S.reviewBox.map(it=>{
+    const q=GENRES[it.gid].questions[it.qi];
+    return {...q, _gid:it.gid, _qi:it.qi};
+  }));
+  S.qi=0; S.score=0; S.answered=false;
+  document.getElementById('qgname').textContent='📚 復習クイズ';
+  show('s-quiz');
+  renderQ();
+}
+
+function renderQ(){
+  const q=S.qs[S.qi], tot=S.qs.length, cur=S.qi+1;
+  document.getElementById('qcnt').textContent=`${cur} / ${tot}`;
+  document.getElementById('qpfill').style.width=((cur-1)/tot*100)+'%';
+  document.getElementById('qscore').textContent=S.score;
+  document.getElementById('qtext').textContent=q.q;
+
+  const choices=document.getElementById('choices');
+  choices.innerHTML='';
+  ['A','B','C','D'].forEach((lbl,i)=>{
+    const b=document.createElement('button');
+    b.className='cbtn';
+    b.innerHTML=`<span class="clabel">${lbl}.</span>${q.cs[i]}`;
+    b.onclick=()=>pick(i);
+    choices.appendChild(b);
+  });
+  document.getElementById('expcard').style.display='none';
+  document.getElementById('expcard').className='exp-card';
+  const nb=document.getElementById('nextbtn');
+  nb.style.display='none';
+  nb.textContent=S.qi+1<S.qs.length?'次の問題へ →':'結果を見る';
+  S.answered=false;
+}
+
+function pick(chosen){
+  if(S.answered) return;
+  S.answered=true;
+  const q=S.qs[S.qi];
+  const ok = chosen===q.a;
+
+  document.querySelectorAll('.cbtn').forEach((b,i)=>{
+    b.onclick=null;
+    if(i===q.a) b.classList.add('correct');
+    else if(i===chosen&&!ok) b.classList.add('wrong');
+  });
+
+  const exp=document.getElementById('expcard');
+  exp.style.display='block';
+  if(ok){
+    exp.className='exp-card correct';
+    exp.innerHTML='✅ 正解！<br>'+q.exp;
+    S.score++;
+    document.getElementById('qscore').textContent=S.score;
+    const gid = S.mode==='review'?q._gid:S.genreId;
+    if(!S.stamps[gid]) S.stamps[gid]=new Set();
+    S.stamps[gid].add(q.city);
+    if(S.mode==='review'){
+      S.reviewBox=S.reviewBox.filter(it=>!(it.gid===q._gid&&it.qi===q._qi));
+    }
+    saveS();
+  } else {
+    exp.className='exp-card wrong';
+    exp.innerHTML='❌ 不正解！ 正解：'+q.cs[q.a]+'<br>'+q.exp;
+    if(S.mode==='quiz'){
+      const origQi = GENRES[S.genreId].questions.findIndex(gq=>gq.q===q.q);
+      const dup = S.reviewBox.some(it=>it.gid===S.genreId&&it.qi===origQi);
+      if(!dup&&origQi>=0){
+        S.reviewBox.push({gid:S.genreId, qi:origQi});
+        saveS();
+      }
+    }
+  }
+  const nb=document.getElementById('nextbtn');
+  nb.style.display='block';
+  nb.textContent=S.qi+1<S.qs.length?'次の問題へ →':'結果を見る';
+}
+
+function nextQ(){
+  S.qi++;
+  if(S.qi>=S.qs.length) showResult();
+  else renderQ();
+}
+
+// ===== RESULT =====
+function showResult(){
+  const tot=S.qs.length, sc=S.score, pct=Math.round(sc/tot*100);
+  let icon,msg;
+  if(pct===100){icon='🏆';msg='完璧！全問正解！全国制覇は目前だ！';}
+  else if(pct>=80){icon='🥇';msg='すばらしい！もう少しで制覇だ！';}
+  else if(pct>=60){icon='🥈';msg='なかなかの調子！復習で満点を狙おう！';}
+  else if(pct>=40){icon='🥉';msg='まだまだ伸びしろあり！復習BOXで練習しよう！';}
+  else{icon='😓';msg='ドンマイ！復習BOXで特訓だ！';}
+
+  const starN=Math.max(1,Math.ceil(sc/tot*5));
+  const stars='⭐'.repeat(starN)+'☆'.repeat(5-starN);
+  const rc=S.reviewBox.length;
+
+  document.getElementById('res-wrap').innerHTML=`
+    <div class="res-icon">${icon}</div>
+    <div class="stars">${stars}</div>
+    <div class="res-score">${sc} / ${tot}</div>
+    <div class="res-msg">${msg}</div>
+    <div class="res-info ${rc>0?'ng':'ok'}">${rc>0?'📚 復習BOXに '+rc+'問 入っています':'✨ 復習BOXは空です！すばらしい！'}</div>
+    <div class="res-btns">
+      ${S.mode==='quiz'?`<button class="btn-p" onclick="startQuiz('${S.genreId}')">もう一度挑戦</button>`:''}
+      ${rc>0?`<button class="btn-s" onclick="startReviewQuiz()">📚 復習クイズに挑戦</button>`:''}
+      <button class="btn-s" onclick="goHome()">ジャンル選択へ戻る</button>
+    </div>`;
+
+  show('s-result');
+  checkAch();
+}
+
+// ===== REVIEW =====
+function buildReview(){
+  const el=document.getElementById('rev-content');
+  if(!S.reviewBox.length){
+    el.innerHTML=`<div class="rev-empty"><div class="ri">🎉</div><p>復習BOXは空です！<br>すべての問題をクリアしました！</p></div>`;
+    return;
+  }
+  let h=`<button class="rev-start" onclick="startReviewQuiz()">🚀 復習クイズを開始（${S.reviewBox.length}問）</button><div class="rev-list">`;
+  S.reviewBox.forEach(it=>{
+    const g=GENRES[it.gid], q=g.questions[it.qi];
+    const prev=q.q.replace(/\n/g,' ').substring(0,28)+(q.q.length>28?'…':'');
+    h+=`<div class="rev-item"><div class="rev-genre">${g.icon} ${g.name}</div><div class="rev-q">${prev}</div></div>`;
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// ===== COLLECTION =====
+function buildCollection(){
+  let totalGot=0, totalAll=0;
+  Object.entries(GENRES).forEach(([id,g])=>{totalGot+=(S.stamps[id]?S.stamps[id].size:0);totalAll+=g.questions.length;});
+  const pct=Math.round(totalGot/totalAll*100);
+
+  let h=`<div class="col-hero">
+    <div class="col-total">🗺️ ${totalGot} / ${totalAll} 制覇</div>
+    <div class="col-pbar-wrap"><div class="col-pbar-fill" style="width:${pct}%"></div></div>
+    <div class="col-sub">全国制覇率 ${pct}%</div>
+  </div>`;
+
+  Object.entries(GENRES).forEach(([id,g])=>{
+    const got=S.stamps[id]||new Set();
+    const gc=got.size, gt=g.questions.length, gp=Math.round(gc/gt*100);
+    h+=`<div class="col-genre">
+      <div class="col-genre-hdr">
+        <div class="col-gname">${g.icon} ${g.name}</div>
+        <div class="col-grate">${gc}/${gt}（${gp}%）</div>
+      </div>
+      <div class="stamp-grid">`;
+    g.questions.forEach(q=>{
+      const ok=got.has(q.city);
+      h+=`<div class="stamp ${ok?'got':''}">
+        <div class="stamp-em">${ok?g.icon:'❓'}</div>
+        <div class="stamp-nm">${ok?q.city:'？？？'}</div>
+      </div>`;
+    });
+    h+='</div></div>';
+  });
+
+  document.getElementById('col-content').innerHTML=h;
+}
+
+// ===== ACHIEVEMENTS =====
+function checkAch(){
+  let total=0,allQ=0;
+  Object.entries(GENRES).forEach(([id,g])=>{total+=(S.stamps[id]?S.stamps[id].size:0);allQ+=g.questions.length;});
+  if(total===allQ){showAch('🏆 全国完全制覇！全50問クリアおめでとう！');return;}
+  Object.entries(GENRES).forEach(([id,g])=>{
+    const s=S.stamps[id];
+    if(s&&s.size===g.questions.length){
+      const k='ach_'+id;
+      if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');showAch(`${g.icon}「${g.name}」完全制覇！`);}
+    }
+  });
+  if(!S.reviewBox.length&&total>0){
+    const k='ach_rev0';
+    if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');showAch('📚 復習BOXを完全クリア！');}
+  }
+}
+function showAch(msg){
+  const b=document.getElementById('ach');
+  b.textContent='🎊 '+msg+' 🎊';
+  b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),4000);
+}
+
+// ===== INIT =====
+loadS();
+buildHome();
+
+// ===== SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(() => {}); // 登録失敗は無視（ローカルファイルなど）
+  });
+}
+</script>
+</body>
+</html>

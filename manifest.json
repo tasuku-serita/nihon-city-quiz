@@ -1,0 +1,27 @@
+{
+  "name": "日本都市クイズ",
+  "short_name": "都市クイズ",
+  "description": "日本全国を旅しながら都市を学ぶクイズアプリ。政令指定都市・県庁所在地・難読地名など5ジャンル50問に挑戦！",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#42A8E8",
+  "background_color": "#D0EEFA",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "games"],
+  "screenshots": []
+}
