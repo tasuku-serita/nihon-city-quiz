@@ -179,6 +179,20 @@ body::after{
 }
 .quiz-score-line{font-size:0.78rem;color:#5B7FA6;font-weight:600;margin-top:5px;}
 
+/* ===== QUIZ NAV ROW ===== */
+.quiz-nav-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px 0;
+}
+.quiz-nav-btn{
+  background:#FFF3E8;border:1.5px solid #FF8C42;color:#E05A00;
+  padding:6px 14px;border-radius:20px;
+  font-size:0.78rem;font-weight:700;cursor:pointer;
+  transition:background 0.15s;
+  white-space:nowrap;
+}
+.quiz-nav-btn:active{background:#FFD9B0;}
+
 /* ===== QUESTION CARD ===== */
 .q-card{
   margin:14px;
@@ -387,6 +401,35 @@ body::after{
 /* home-stamp-total の色上書き */
 #home-stamp-total{color:rgba(255,255,255,0.92)!important;font-weight:700!important;}
 
+/* ===== ANSWER OVERLAY ===== */
+.answer-overlay{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.3);
+  font-size:7rem;font-weight:900;
+  pointer-events:none;z-index:10000;
+  opacity:0;
+  line-height:1;
+  text-align:center;
+}
+.answer-overlay.show-ok{
+  color:#FF8C42;
+  text-shadow:0 0 40px rgba(255,213,64,0.8),0 4px 16px rgba(255,140,66,0.5);
+  animation:ovPop 1.3s ease forwards;
+}
+.answer-overlay.show-ng{
+  color:#EF5350;
+  text-shadow:0 0 40px rgba(239,83,80,0.5),0 4px 16px rgba(239,83,80,0.35);
+  animation:ovPop 1.3s ease forwards;
+}
+@keyframes ovPop{
+  0%  {opacity:0;transform:translate(-50%,-50%) scale(0.3);}
+  18% {opacity:1;transform:translate(-50%,-50%) scale(1.25);}
+  32% {opacity:1;transform:translate(-50%,-50%) scale(1.0);}
+  68% {opacity:1;transform:translate(-50%,-50%) scale(1.0);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.0);}
+}
+
 /* ===== RESPONSIVE ===== */
 @media(min-width:480px){.genre-grid{grid-template-columns:repeat(3,1fr);}}
 @media(min-width:600px){
@@ -399,6 +442,7 @@ body::after{
 <body>
 
 <div id="ach" class="ach-banner"></div>
+<div id="answer-overlay" class="answer-overlay"></div>
 
 <!-- HOME -->
 <div id="s-home" class="screen active">
@@ -436,6 +480,10 @@ body::after{
     </div>
     <div class="quiz-pbar"><div class="quiz-pfill" id="qpfill"></div></div>
     <div class="quiz-score-line">⭐ 正解: <span id="qscore">0</span></div>
+  </div>
+  <div class="quiz-nav-row">
+    <button class="quiz-nav-btn" onclick="goHome()">🏠 ホームへ</button>
+    <button class="quiz-nav-btn" id="prevbtn" onclick="prevQ()" style="display:none;">← 一問前へ</button>
   </div>
   <div class="q-card"><div class="q-text" id="qtext"></div></div>
   <div class="choices" id="choices"></div>
@@ -552,7 +600,7 @@ const GENRES = {
 
 // ===== STATE =====
 const SK = 'nihon_city_quiz_v2';
-let S = {stamps:{}, reviewBox:[], mode:'quiz', genreId:null, qs:[], qi:0, score:0, answered:false};
+let S = {stamps:{}, reviewBox:[], mode:'quiz', genreId:null, qs:[], qi:0, score:0, answered:false, questionLog:[]};
 
 function loadS(){
   try{
@@ -615,7 +663,7 @@ function shuffle(arr){
 function startQuiz(id){
   S.mode='quiz'; S.genreId=id;
   S.qs=shuffle(GENRES[id].questions);
-  S.qi=0; S.score=0; S.answered=false;
+  S.qi=0; S.score=0; S.answered=false; S.questionLog=[];
   document.getElementById('qgname').textContent = GENRES[id].icon+' '+GENRES[id].name;
   show('s-quiz');
   renderQ();
@@ -628,7 +676,7 @@ function startReviewQuiz(){
     const q=GENRES[it.gid].questions[it.qi];
     return {...q, _gid:it.gid, _qi:it.qi};
   }));
-  S.qi=0; S.score=0; S.answered=false;
+  S.qi=0; S.score=0; S.answered=false; S.questionLog=[];
   document.getElementById('qgname').textContent='📚 復習クイズ';
   show('s-quiz');
   renderQ();
@@ -652,6 +700,7 @@ function renderQ(){
   });
   document.getElementById('expcard').style.display='none';
   document.getElementById('expcard').className='exp-card';
+  document.getElementById('prevbtn').style.display = S.qi===0 ? 'none' : '';
   const nb=document.getElementById('nextbtn');
   nb.style.display='none';
   nb.textContent=S.qi+1<S.qs.length?'次の問題へ →':'結果を見る';
@@ -663,6 +712,12 @@ function pick(chosen){
   S.answered=true;
   const q=S.qs[S.qi];
   const ok = chosen===q.a;
+  const gid = S.mode==='review'?q._gid:S.genreId;
+  const origQi = S.mode==='review'?q._qi:GENRES[S.genreId].questions.findIndex(gq=>gq.q===q.q);
+  const logEntry = {wasCorrect:ok, gid, city:q.city, origQi, reviewAdded:false};
+
+  playSound(ok);
+  showAnswerOverlay(ok);
 
   document.querySelectorAll('.cbtn').forEach((b,i)=>{
     b.onclick=null;
@@ -677,7 +732,6 @@ function pick(chosen){
     exp.innerHTML='✅ 正解！<br>'+q.exp;
     S.score++;
     document.getElementById('qscore').textContent=S.score;
-    const gid = S.mode==='review'?q._gid:S.genreId;
     if(!S.stamps[gid]) S.stamps[gid]=new Set();
     S.stamps[gid].add(q.city);
     if(S.mode==='review'){
@@ -688,14 +742,15 @@ function pick(chosen){
     exp.className='exp-card wrong';
     exp.innerHTML='❌ 不正解！ 正解：'+q.cs[q.a]+'<br>'+q.exp;
     if(S.mode==='quiz'){
-      const origQi = GENRES[S.genreId].questions.findIndex(gq=>gq.q===q.q);
       const dup = S.reviewBox.some(it=>it.gid===S.genreId&&it.qi===origQi);
       if(!dup&&origQi>=0){
         S.reviewBox.push({gid:S.genreId, qi:origQi});
+        logEntry.reviewAdded=true;
         saveS();
       }
     }
   }
+  S.questionLog.push(logEntry);
   const nb=document.getElementById('nextbtn');
   nb.style.display='block';
   nb.textContent=S.qi+1<S.qs.length?'次の問題へ →':'結果を見る';
@@ -705,6 +760,20 @@ function nextQ(){
   S.qi++;
   if(S.qi>=S.qs.length) showResult();
   else renderQ();
+}
+
+function prevQ(){
+  if(S.qi<=0) return;
+  const log = S.questionLog.pop();
+  if(log){
+    if(log.wasCorrect) S.score = Math.max(0, S.score-1);
+    if(log.reviewAdded){
+      S.reviewBox = S.reviewBox.filter(it=>!(it.gid===log.gid&&it.qi===log.origQi));
+      saveS();
+    }
+  }
+  S.qi--;
+  renderQ();
 }
 
 // ===== RESULT =====
@@ -810,6 +879,35 @@ function showAch(msg){
   b.textContent='🎊 '+msg+' 🎊';
   b.classList.add('show');
   setTimeout(()=>b.classList.remove('show'),4000);
+}
+
+// ===== SOUND =====
+const _correctAudio = new Audio('./クイズ正解3.mp3');
+
+function playSound(ok){
+  if(ok){
+    try{_correctAudio.currentTime=0;_correctAudio.play();}catch(e){}
+  } else {
+    try{
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(220,ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(75,ctx.currentTime+0.45);
+      g.gain.setValueAtTime(0.32,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start(ctx.currentTime);o.stop(ctx.currentTime+0.5);
+    }catch(e){}
+  }
+}
+
+function showAnswerOverlay(ok){
+  const el=document.getElementById('answer-overlay');
+  el.className='answer-overlay';
+  el.textContent=ok?'◯':'✕';
+  void el.offsetWidth;
+  el.classList.add(ok?'show-ok':'show-ng');
 }
 
 // ===== INIT =====
